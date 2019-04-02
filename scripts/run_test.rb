@@ -20,7 +20,7 @@ jmeter_bin_path='/opt/apache-jmeter-5.1.1/bin/jmeter'
   logs_folder
 ].each {|folder_path| FileUtils.mkdir_p(folder_path) unless File.exists?(folder_path)}
 
-test_settings_hash['cmd_options'].each {|setting,value| jmeter_cmd_options+="-J#{setting}=#{value} "}
+test_settings_hash['jmeter_args'].each {|setting,value| jmeter_cmd_options+="-J#{setting}=#{value} "}
 
 jmeter_cmd=[
   "#{jmeter_bin_path} -n",
