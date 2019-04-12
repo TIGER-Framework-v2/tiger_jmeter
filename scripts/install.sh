@@ -18,7 +18,7 @@ rm -rf /var/cache/apk/*
 wget -O ${JM_NAME}.tgz ${JM_URL} 
 tar -xzf ${JM_NAME}.tgz -C /opt/ 
 rm -f ${JM_NAME}.tgz 
-mkdir -p /opt/tiger/scripts /opt/tiger/tests 
+mkdir -p /opt/tiger/scripts /opt/tiger/jmeter_test
 adduser -D -u 1001 tiger 
-chown -R tiger /opt/tiger/jmeter_test
+chown -R tiger /opt/tiger
  
