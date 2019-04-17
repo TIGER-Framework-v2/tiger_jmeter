@@ -65,7 +65,7 @@ extended_jmeter_plan_path=tiger_extension_obj.extend_jmeter_jmx(data_folder)
 # compiling command line for the tests execution
 jmeter_cmd=[
   "#{jmeter_bin_path} -n",
-  "-t #{test_settings_hash['plan']}",
+  "-t #{extended_jmeter_plan_path}",
   "-p #{test_settings_hash['properties']}",
   jmeter_cmd_options.chomp,
   "-l #{data_folder}/#{test_type}.jtl",
