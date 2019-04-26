@@ -3,7 +3,7 @@ require 'fileutils'
 require 'date'
 
 # Require all files from 'classes' directory
-Dir["classes/*.rb"].each {|file| require file }
+Dir["classes/*.rb"].each {|file| require_relative file }
 
 
 # defining variables
@@ -79,8 +79,8 @@ $logger.info "Launching JMeter using compiled command line: #{jmeter_cmd}"
 build_started  = DateTime.now.new_offset(0).strftime("%Y-%m-%d %H:%M:%S")
 # Starting tests
 jmeter_cmd_res = system(jmeter_cmd)
-get_CSV = InfluxDB.new()
-get_CSV.get_aggregated_data_to_csv
+get_CSV = Influx.new()
+get_CSV.get_aggregated_data_to_csv(build_started)
 
 $logger.info jmeter_cmd_res
 $logger.info "Results folder: #{test_results_folder}"

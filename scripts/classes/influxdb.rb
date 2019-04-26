@@ -1,5 +1,4 @@
-class InfluxDB
-  require 'json'
+class Influx
   require 'date'
   require 'influxdb'
   require 'time'
@@ -10,8 +9,8 @@ class InfluxDB
     @influx_host     = ENV['influx_host']
     @influx_port     = ENV['influx_port']
     @influx_db       = ENV['influx_db']
-    @influx_username = ENV['INFLUXDB_ADMIN_USER']
-    @influx_password = ENV['INFLUXDB_ADMIN_PASSWORD']
+    @influx_username = ENV['influx_username']
+    @influx_password = ENV['influx_password']
     @lg_id           = ENV['lg_id']
     @project_id      = ENV['project_id']
     @env_type        = ENV['env_type']
@@ -43,7 +42,7 @@ class InfluxDB
       retries ||= 0
       getStartTime = `curl -G "#{@influx_protocol}://#{@influx_host}:#{@influx_port}/query?u=#{@influx_username}&p=#{@influx_password}" --data-urlencode "db=#{@influx_db}" --data-urlencode "q=#{queryStartTime}" `
       p getStartTime 
-      testdata = influxdb.query  queryStartTime
+      testdata = @influxdb.query  queryStartTime
       p testdata
       getEndTime   = `curl -G "#{@influx_protocol}://#{@influx_host}:#{@influx_port}/query?u=#{@influx_username}&p=#{@influx_password}" --data-urlencode "db=#{@influx_db}" --data-urlencode "q=#{queryEndTime}" `
       buildStarted = getStartTime[/\d{4}-\d{2}-\d{2}[T]\d{2}:\d{2}:\d{2}.\d*[Z]/]
@@ -56,4 +55,4 @@ class InfluxDB
       retry if (retries +=1 ) < 5
     end
   end
-
+end
