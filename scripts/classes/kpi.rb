@@ -1,0 +1,3 @@
+class KPI
+
+end
