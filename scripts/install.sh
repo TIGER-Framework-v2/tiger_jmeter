@@ -15,7 +15,8 @@ apk upgrade
 apk add ca-certificates 
 update-ca-certificates 
 apk add --no-cache nss openjdk8-jre tzdata git ruby 
-rm -rf /var/cache/apk/* 
+rm -rf /var/cache/apk/*
+gem install influxdb --no-rdoc --no-ri  
 wget -O ${JM_NAME}.tgz ${JM_URL} 
 tar -xzf ${JM_NAME}.tgz -C /opt/ 
 rm -f ${JM_NAME}.tgz 
