@@ -19,12 +19,11 @@ class Influx
     influxdbUrl      = "#{@influx_protocol}://#{@influx_host}:#{@influx_port}/"
     influxdbDatabase = "#{@influx_db}"
     @influxdb = InfluxDB::Client.new influxdbDatabase,
-           url: influxdbUrl,
-           username: @influx_username,
-           password: @influx_password,
-           open_timeout: 320,
-           read_timeout: 320
-
+                url: influxdbUrl,
+                username: @influx_username,
+                password: @influx_password,
+                open_timeout: 320,
+                read_timeout: 320
   end
   
   def get_aggregated_data_to_csv(start_time)
