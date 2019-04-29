@@ -14,9 +14,9 @@ env_type             = ENV['env_type']
 lg_id                = ENV['lg_id']
 test_type            = ENV['test_type']
 jmeter_test_path     = "/opt/tiger/jmeter_test"
-test_results_folder  = "/opt/tiger/#{test_type}/results"
-data_folder          = test_results_folder+"/data"
-logs_folder          = test_results_folder+"/log"
+$test_results_folder  = "/opt/tiger/#{test_type}/results"
+data_folder          = $test_results_folder+"/data"
+logs_folder          = $test_results_folder+"/log"
 jmeter_cmd_options   = ''
 jmeter_bin_path      = '/opt/apache-jmeter-5.1.1/bin/jmeter'
 tiger_influxdb_extension_path = '/opt/tiger/scripts/tiger_extensions/jmeter_tiger_extension.jmx'
@@ -76,12 +76,11 @@ jmeter_cmd=[
 
 $logger.info "Launching JMeter using compiled command line: #{jmeter_cmd}"
 
-build_started  = DateTime.now.new_offset(0).strftime("%Y-%m-%d %H:%M:%S")
+build_started  = (DateTime.now.new_offset(0) - (5/86400.0)).strftime("%Y-%m-%d %H:%M:%S") # Get the build start time and decrese it becouse of InfluxDB time delays
 # Starting tests
 jmeter_cmd_res = system(jmeter_cmd)
 get_CSV = Influx.new()
 get_CSV.get_aggregated_data_to_csv(build_started)
 
 $logger.info jmeter_cmd_res
-$logger.info "Results folder: #{test_results_folder}"
-
+$logger.info "Results folder: #{$test_results_folder}"
