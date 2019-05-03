@@ -2,7 +2,6 @@ require 'yaml'
 require 'fileutils'
 require 'date'
 
-# Require all files from 'classes' directory
 Dir["classes/*.rb"].each {|file| require_relative file }
 
 

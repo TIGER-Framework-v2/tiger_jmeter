@@ -33,6 +33,7 @@ class Influx
     getBuildDurationTime(start_time)
     getAggregatedData
     aggregatedDataToCsv
+    sendAggregatedDataToDB
   end
 
   ##### Private methods #####
@@ -43,10 +44,10 @@ class Influx
   	queryEndTime   = "SELECT last(responseTime)  FROM \"requestsRaw\" WHERE \"projectName\"=\'#{@project_id}\' AND \"envType\"=\'#{@env_type}\' AND \"testType\"=\'#{@test_type}\' and time > \'#{time}\'"
   	begin
       retries ||= 0
-      getStartTime   = @influxdb.query queryStartTime 
-      @buildStarted   = getStartTime[0]['values'][0]['time']
-      getEndTime     = @influxdb.query queryEndTime
-      @buildEnded    = getEndTime[0]['values'][0]['time']
+      getStartTime  = @influxdb.query queryStartTime 
+      @buildStarted = getStartTime[0]['values'][0]['time']
+      getEndTime    = @influxdb.query queryEndTime
+      @buildEnded   = getEndTime[0]['values'][0]['time']
     rescue
       puts "Error #{$!}. Start time: #{getStartTime}  End time: #{getEndTime} Time: #{time}"
       $logger.info "  |- Could not parse start or end time. Start time: #{getStartTime}  End time: #{getEndTime} .Retry #{retries}"
@@ -63,10 +64,43 @@ class Influx
     CSV.open("#{$test_results_folder}/log/aggregatedData.csv", "wb") do |csv|
       data = JSON.parse(@getAggregatedData.to_json)
       csv << ["sampler_label"] + data[0]['columns'][1..-1].each {|el| el}
-      data.each do |i|
-        csv << [i['tags']['requestName']] + i['values'][0][1..-1]
+      data.each do |line|
+        csv << [line['tags']['requestName']] + line['values'][0][1..-1]
       end
     end
   end
+
+  # Parsing query results for generating string for sending data 
+  def parsing_query(query,measurement)
+    result = ""
+    result += "#{measurement}"
+    query['tags'][:version_id] = @version_id if @version_id != ""
+    query['tags'].each { |k,v| result+=",#{k}=#{v.gsub(' ','\ ')}" }
+    result += " "
+    query['values'][0].each do |k,v|
+      next if k =~ /time/
+      v = "#{v.to_i}i" if k =~ /aggregate_report_count/
+      v = "#{v.to_i}i" if k =~ /aggregate_report_min/
+      v = "#{v.to_i}i" if k =~ /aggregate_report_max/
+      v = "#{v.to_i}i" if k =~ /aggregate_report_90%_line/
+      v = "#{v.to_i}i" if k =~ /aggregate_report_95%_line/
+      v = "#{v.to_i}i" if k =~ /aggregate_report_99%_line/
+      v = 0 if v.nil?
+      result += "#{k}=#{v},"
+    end
+    result.chomp!(',')
+    result += " #{Time.now.strftime('%s')}"
+    return result
+  end
+
+  def sendAggregatedDataToDB #(test_duration)
+    # Data for sending aggregated metrics to influxdb
+    @getAggregatedData.each do |str|
+      @influxdb.writr_points(parsing_query(str,"aggregateReports"),"s")
+      #data_to_write = `curl -i -XPOST "#{@influx_protocol}://#{@influx_host}:#{@influx_port}/write?db=#{@influx_db}&precision=s&u=#{@influx_username}&p=#{@influx_password}" --data-binary '#{parsing_query(str,"aggregateReports")}'`
+      $logger.info "Data for writing #{data_to_write}"
+    end
+  end
+
 
 end
