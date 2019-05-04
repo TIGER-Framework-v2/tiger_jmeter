@@ -30,10 +30,10 @@ class Influx
   end
   
   def get_aggregated_data_to_csv(start_time)
-    getBuildDurationTime(start_time)
-    getAggregatedData
-    aggregatedDataToCsv
-    sendAggregatedDataToDB
+    getBuildDurationTime(start_time) # get start, finish test time
+    getAggregatedData                # get aggregated data from InfluxDb
+    aggregatedDataToCsv              # Create CSV file and write aggregated data to it
+    sendAggregatedDataToDB           # Send aggregated data to 'aggregatedReport' measurements
   end
 
   ##### Private methods #####
@@ -91,11 +91,34 @@ class Influx
     return result
   end
 
-  def sendAggregatedDataToDB #(test_duration)
+  def sendAggregatedDataToDB 
     @getAggregatedData.each do |str|
       @influxdb.write_points(parsing_query(str,"aggregateReports"),"s")      
     end
+
+    # Sending TOTAL metrics to InfluxDB
+    test_duration = (DateTime.parse @buildStarted).to_time - (DateTime.parse @buildEnded).to_time
+    total_report_rate = @influxdb.query "SELECT SUM(aggregate_report_count)/#{test_duration} as \"aggregate_report_rate\",SUM(\"aggregate_report_error%%\")/count(\"aggregate_report_error%%\") as \"aggregate_report_error%%\", SUM(aggregate_report_count) as \"aggregate_report_count\"  from aggregateReports WHERE \"projectName\"=\'#{@project_id}\' AND \"envType\"=\'#{@env_type}\' AND \"testType\"=\'#{@test_type}\' AND \"buildID\"=\'#{@current_build_number}\' AND time > \'#{@buildStarted}\'"
+    total_report_bandwith = @influxdb.query "SELECT SUM(responseBytes)/#{test_duration.to_i}/1000 as \"aggregate_report_bandwidth\" from requestsRaw WHERE \"projectName\"=\'#{@project_id}\' AND \"envType\"=\'#{@env_type}\' AND \"testType\"=\'#{@test_type}\' AND \"buildID\"=\'#{@current_build_number}\' AND time > \'#{@buildStarted}\'"
+
+    data = {
+      series: "aggregateReports",
+      tags: {
+        buildID: "#{@current_build_number}",
+        envType: "#{@env_type}",
+        projectName: "#{@project_id}",
+        requestName: "TOTAL",
+        version_id: "#{@version_id}",
+        testType: "#{@test_type}"
+      },
+      values: {
+        aggregate_report_count: total_report_rate[0]['values'][0]['aggregate_report_count'],
+        aggregate_report_rate: "#{total_report_rate[0]['values'][0]['aggregate_report_rate'].round(2)}/sec",
+        aggregate_report_bandwidth: "#{total_report_bandwith[0]['values'][0]['aggregate_report_bandwidth'].round(2)}KB/s",
+        "aggregate_report_error%"=>total_report_rate[0]['values'][0]['aggregate_report_error%'].to_f
+      },
+      timestamp: Time.now.to_i
+    }
+    @influxdb.write_points(data,"s") # send data with time precision
   end
-
-
 end
