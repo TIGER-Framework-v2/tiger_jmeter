@@ -70,35 +70,30 @@ class Influx
     end
   end
 
-  # Parsing query results for generating string for sending data 
+  # Parsing query results for generating Hash for sending data via InfluxDB lib
   def parsing_query(query,measurement)
-    result = ""
-    result += "#{measurement}"
-    query['tags'][:version_id] = @version_id if @version_id != ""
-    query['tags'].each { |k,v| result+=",#{k}=#{v.gsub(' ','\ ')}" }
-    result += " "
-    query['values'][0].each do |k,v|
-      next if k =~ /time/
-      v = "#{v.to_i}i" if k =~ /aggregate_report_count/
-      v = "#{v.to_i}i" if k =~ /aggregate_report_min/
-      v = "#{v.to_i}i" if k =~ /aggregate_report_max/
-      v = "#{v.to_i}i" if k =~ /aggregate_report_90%_line/
-      v = "#{v.to_i}i" if k =~ /aggregate_report_95%_line/
-      v = "#{v.to_i}i" if k =~ /aggregate_report_99%_line/
-      v = 0 if v.nil?
-      result += "#{k}=#{v},"
+    result = Hash.new
+    result[:series] = measurement
+    result[:tags] = query['tags']
+    values = Hash[query['columns'].zip(query['values'][0])]
+    values.delete("time")
+    values.each do |k,v|
+      values[k] = v.to_f
+      values[k] = v.to_i if k =~ /aggregate_report_count/
+      values[k] = v.to_i if k =~ /aggregate_report_min/
+      values[k] = v.to_i if k =~ /aggregate_report_max/
+      values[k] = v.to_i if k =~ /aggregate_report_90%_line/
+      values[k] = v.to_i if k =~ /aggregate_report_95%_line/
+      values[k] = v.to_i if k =~ /aggregate_report_99%_line/
     end
-    result.chomp!(',')
-    result += " #{Time.now.strftime('%s')}"
+    result[:values] = values
+    result[:timestamp] = Time.now.to_i  
     return result
   end
 
   def sendAggregatedDataToDB #(test_duration)
-    # Data for sending aggregated metrics to influxdb
     @getAggregatedData.each do |str|
-      @influxdb.writr_points(parsing_query(str,"aggregateReports"),"s")
-      #data_to_write = `curl -i -XPOST "#{@influx_protocol}://#{@influx_host}:#{@influx_port}/write?db=#{@influx_db}&precision=s&u=#{@influx_username}&p=#{@influx_password}" --data-binary '#{parsing_query(str,"aggregateReports")}'`
-      $logger.info "Data for writing #{data_to_write}"
+      @influxdb.write_points(parsing_query(str,"aggregateReports"),"s")      
     end
   end
 
