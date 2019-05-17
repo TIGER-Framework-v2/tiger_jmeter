@@ -52,14 +52,14 @@ class Kpi
       report_sampler_index = @aggregated_data_hash['sampler_label'].index(sampler_label_name)
 
       if (@predefined_kpi['sampler_label'].find { |e| /#{e}/ =~ sampler_label_name })
-        all_matches = predefined_kpi.select{|item| /#{item[0]}/ =~ sampler_label_name }
+        all_matches = @predefined_kpi.select{|item| /#{item[0]}/ =~ sampler_label_name }
         all_matches.each do |item|
           begin
             scope_name         = item['scope_name']
-            report_scope_index = aggregated_data_hash.headers.index(scope_name)
+            report_scope_index = @aggregated_data_hash.headers.index(scope_name)
             yellow_threshold   = item['yellow_threshold']
             red_threshold      = item['red_threshold']
-            report_value       = aggregated_data_hash[report_sampler_index][report_scope_index]
+            report_value       = @aggregated_data_hash[report_sampler_index][report_scope_index]
             analyze_metric(scope_name,sampler_label_name,red_threshold,yellow_threshold,report_value)
           rescue 
             p "Wrong 'sampler_label' defined in KPI's. Please check it for '#{sampler_label_name}'"
