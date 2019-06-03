@@ -48,10 +48,11 @@ class Kpi
     @yellow_threshold_violations_count = 0
     @red_threshold_violations_count    = 0
     
-    # Create array of all Any
-    if (@predefined_kpi['sampler_label'].include?('any'))
-      any_values_from_kpi = @predefined_kpi.select{|item| item[0] == 'any'}
-      any_values_from_kpi.delete_if {|row| row['scope_name'].nil? }                     # Delete empty elements from array
+    # Create array of all '.*'
+    if (@predefined_kpi['sampler_label'].include?('.*'))
+      any_values_from_kpi = @predefined_kpi.select{|item| item[0] == '.*'}               # Find all '.*' values and add them to separate array
+      any_values_from_kpi.delete_if {|row| row['scope_name'].nil? }                      # Delete empty elements from array
+      @predefined_kpi.delete_if {|row| any_values_from_kpi.include?(row)}                # Delete all '.*' from KPI's
     end
 
     @aggregated_data_hash['sampler_label'].each do |sampler_label_name|
@@ -79,54 +80,15 @@ class Kpi
 
       if selected_kpi.length > 0                                                         # Start analysing KPI's 
         selected_kpi.each do |item|
-          begin
-            scope_name         = item['scope_name']
-            report_scope_index = aggregated_data_hash.headers.index(scope_name)
-            yellow_threshold   = item['yellow_threshold']
-            red_threshold      = item['red_threshold']
-            report_value       = aggregated_data_hash[report_sampler_index][report_scope_index]
-            analyze_metric(scope_name,sampler_label_name,red_threshold,yellow_threshold,report_value)
-          rescue 
-            $logger.error "Wrong 'scope_name' defined in KPI's. Please check it for '#{sampler_label_name}'"
-          end
+          scope_name         = item['scope_name']
+          report_scope_index = @aggregated_data_hash.headers.index(scope_name)
+          yellow_threshold   = item['yellow_threshold']
+          red_threshold      = item['red_threshold']
+          report_value       = @aggregated_data_hash[report_sampler_index][report_scope_index]
+          analyze_metric(scope_name,sampler_label_name,red_threshold,yellow_threshold,report_value)
         end
       end
     end
-
-
-
-
-
-
-    #@aggregated_data_hash['sampler_label'].each do |sampler_label_name|
-    #  report_sampler_index = @aggregated_data_hash['sampler_label'].index(sampler_label_name)
-#
-    #  if (@predefined_kpi['sampler_label'].find { |e| /#{e}/ =~ sampler_label_name })
-    #    all_matches = @predefined_kpi.select{|item| /#{item[0]}/ =~ sampler_label_name }
-    #    all_matches.each do |item|
-    #      begin
-    #        scope_name         = item['scope_name']
-    #        report_scope_index = @aggregated_data_hash.headers.index(scope_name)
-    #        yellow_threshold   = item['yellow_threshold']
-    #        red_threshold      = item['red_threshold']
-    #        report_value       = @aggregated_data_hash[report_sampler_index][report_scope_index]
-    #        analyze_metric(scope_name,sampler_label_name,red_threshold,yellow_threshold,report_value)
-    #      rescue 
-    #        p "Wrong 'sampler_label' defined in KPI's. Please check it for '#{sampler_label_name}'"
-    #      end
-    #    end
-    #  elsif (@predefined_kpi['sampler_label'].include?('any'))
-    #    kpi_any_array = @predefined_kpi.select{|item| item[0]=='any'}
-    #    kpi_any_array.each do |item| # checking all the KPIs for all the 'any' statements in the KPI CSV file
-    #      scope_name         = item[1]
-    #      report_scope_index = @aggregated_data_hash.headers.index(scope_name)
-    #      yellow_threshold   = item[2]
-    #      red_threshold      = item[3]
-    #      report_value       = @aggregated_data_hash[report_sampler_index][report_scope_index]
-    #      analyze_metric(scope_name,sampler_label_name,red_threshold,yellow_threshold,report_value)
-    #    end
-    #  end
-    #end
 
     if @red_threshold_violations_count > 0
       p "Test has exceeded values"
