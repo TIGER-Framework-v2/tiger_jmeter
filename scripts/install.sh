@@ -21,7 +21,7 @@ wget -O ${JM_NAME}.tgz ${JM_URL}
 tar -xzf ${JM_NAME}.tgz -C /opt/ 
 rm -f ${JM_NAME}.tgz 
 mkdir -p /opt/tiger/scripts /opt/tiger/jmeter_test /opt/tiger/temp
-curl -O $backend_listener_url /opt/tiger/temp
+wget -O $backend_listener_url /opt/tiger/temp
 adduser -D -u 1001 tiger 
 chown -R tiger /opt/tiger
 mv /opt/tiger/temp/InfluxBackendListenerClient.jar /opt/apache-jmeter-5.1.1/lib/ext
