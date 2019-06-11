@@ -1,43 +1,48 @@
 class Kpi
   require 'csv'
 
-  def initialize
+  def initialize(tests_repo_name,jmeter_test_path,test_results_folder)
     test_type = ENV['test_type']
 
     begin
-      @aggregated_data_hash = CSV.read("#{$test_results_folder}/log/aggregatedData.csv", :headers => true, converters: :numeric)
+      @aggregated_data_hash = CSV.read("#{test_results_folder}/log/aggregatedData.csv", :headers => true, converters: :numeric)
     rescue
-      $logger.error "Can't read #{$test_results_folder}/log/aggregatedData.csv file"
+      $logger.error "Can't read #{test_results_folder}/log/aggregatedData.csv file"
       exit 1
   	end
 
   	begin 
-      @predefined_kpi = CSV.read("#{$jmeter_test_path}/#{$tests_repo_name}/#{test_type}/#{test_type}.kpi.csv", :headers => true, converters: :numeric)
+      @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.kpi.csv", :headers => true, converters: :numeric)
   	rescue
-      $logger.error "Can't read #{$jmeter_test_path}/#{$tests_repo_name}/#{test_type}/#{test_type}.kpi.csv file"
+      $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.kpi.csv file"
       exit 1
     end
   end
 
   def analyze_metric(scope_name, sampler_label_name, red_threshold, yellow_threshold, report_value)
     case scope_name
-    when /tps_rate/
+    when /tps_rate|success_rate/
       if report_value < red_threshold
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} < red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value < yellow_threshold
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} < yellow_threshold (#{yellow_threshold})"
         @yellow_threshold_violations_count += 1
       end
     when /aggregate_report_error/
       if report_value.to_f > red_threshold
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value.to_f > yellow_threshold
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold})"
         @yellow_threshold_violations_count += 1
       end
     else
       if report_value > red_threshold
-        $logger.info "#{scope_name} Exsided #{red_threshold} for #{sampler_label_name}"
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value > yellow_threshold
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold})"
         @yellow_threshold_violations_count += 1
       end
     end

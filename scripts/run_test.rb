@@ -6,16 +6,16 @@ Dir["classes/*.rb"].each {|file| require_relative file }
 
 
 # defining variables
-$tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')
+tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')
 current_build_number = ENV['current_build_number'].to_i
 project_id           = ENV['project_id']
 env_type             = ENV['env_type']
 lg_id                = ENV['lg_id']
 test_type            = ENV['test_type']
-$jmeter_test_path     = "/opt/tiger/jmeter_test"
-$test_results_folder = "/opt/tiger/#{test_type}/results"
-data_folder          = $test_results_folder+"/data"
-logs_folder          = $test_results_folder+"/log"
+jmeter_test_path     = "/opt/tiger/jmeter_test"
+test_results_folder = "/opt/tiger/#{test_type}/results"
+data_folder          = test_results_folder+"/data"
+logs_folder          = test_results_folder+"/log"
 jmeter_cmd_options   = ''
 jmeter_bin_path      = '/opt/apache-jmeter-5.1.1/bin/jmeter'
 tiger_influxdb_extension_path = '/opt/tiger/scripts/tiger_extensions/jmeter_tiger_extension.jmx'
@@ -29,13 +29,13 @@ tiger_influxdb_extension_path = '/opt/tiger/scripts/tiger_extensions/jmeter_tige
 $logger=TigerLogger.new(logs_folder)
 
 $logger.info "Clonning tests repository: git clone #{ENV['tests_repo']}"
-Dir.chdir $jmeter_test_path
+Dir.chdir jmeter_test_path
 raise "Tests were not downloaded successfully" unless system("git clone #{ENV['tests_repo']}")
-Dir.chdir("#{$jmeter_test_path}/#{$tests_repo_name}/#{test_type}")
+Dir.chdir("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}")
 
 
 
-test_settings_hash=YAML.load(File.read("#{$jmeter_test_path}/#{$tests_repo_name}/#{test_type}/#{test_type}.yml"))
+test_settings_hash=YAML.load(File.read("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.yml"))
 
 # reading tests settings from the YAML configuration file
 
@@ -82,8 +82,8 @@ jmeter_cmd_res = system(jmeter_cmd)
 get_CSV = Influx.new()
 get_CSV.get_aggregated_data_to_csv(build_started)
 # Applying KPI analyze
-kpi = Kpi.new()
+kpi = Kpi.new(tests_repo_name,jmeter_test_path,test_results_folder)
 kpi.kpi_analyse
 
 $logger.info jmeter_cmd_res
-$logger.info "Results folder: #{$test_results_folder}"
+$logger.info "Results folder: #{test_results_folder}"
