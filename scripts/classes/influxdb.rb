@@ -29,10 +29,10 @@ class Influx
                 read_timeout: 320
   end
   
-  def get_aggregated_data_to_csv(start_time)
+  def get_aggregated_data_to_csv(start_time,test_results_folder)
     getBuildDurationTime(start_time) # get start, finish test time
     getAggregatedData                # get aggregated data from InfluxDb
-    aggregatedDataToCsv              # Create CSV file and write aggregated data to it
+    aggregatedDataToCsv(test_results_folder)              # Create CSV file and write aggregated data to it
     sendAggregatedDataToDB           # Send aggregated data to 'aggregatedReport' measurements
   end
 
@@ -60,8 +60,8 @@ class Influx
     @getAggregatedData = @influxdb.query queryGetAggregatedData , denormalize: false
   end
 
-  def aggregatedDataToCsv
-    CSV.open("#{$test_results_folder}/log/aggregatedData.csv", "wb") do |csv|
+  def aggregatedDataToCsv(test_results_folder)
+    CSV.open("#{test_results_folder}/log/aggregatedData.csv", "wb") do |csv|
       data = JSON.parse(@getAggregatedData.to_json)
       csv << ["sampler_label"] + data[0]['columns'][1..-1].each {|el| el}
       data.each do |line|

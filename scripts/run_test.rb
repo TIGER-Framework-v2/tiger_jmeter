@@ -80,7 +80,8 @@ build_started  = (DateTime.now.new_offset(0) - (5/86400.0)).strftime("%Y-%m-%d %
 jmeter_cmd_res = system(jmeter_cmd)
 # Getting aggregated data 
 get_CSV = Influx.new()
-get_CSV.get_aggregated_data_to_csv(build_started)
+get_CSV.get_aggregated_data_to_csv(build_started,test_results_folder)
+
 # Applying KPI analyze
 kpi = Kpi.new(tests_repo_name,jmeter_test_path,test_results_folder)
 kpi.kpi_analyse
