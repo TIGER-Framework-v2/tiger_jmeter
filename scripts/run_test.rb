@@ -86,7 +86,7 @@ $logger.info "Launching JMeter using compiled command line: #{jmeter_cmd}"
 if (File.exists?("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/jmeter"))
   $logger.info "#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/jmeter file was found"
   $logger.info "Replacing default jmeter executable file with test defined script"
-  FileUtils.cp("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/jmeter",'/opt/apache-jmeter-5.1.1/bin')
+  FileUtils.cp("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/jmeter",'/opt/apache-jmeter-5.1.1/bin',remove_destination: true)
   FileUtils.chmod 0755,'/opt/apache-jmeter-5.1.1/bin/jmeter'
 end
 
