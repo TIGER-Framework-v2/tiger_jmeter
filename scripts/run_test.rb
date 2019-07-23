@@ -31,6 +31,13 @@ $logger=TigerLogger.new(logs_folder)
 $logger.info "Clonning tests repository: git clone #{ENV['tests_repo']}"
 Dir.chdir jmeter_test_path
 raise "Tests were not downloaded successfully" unless system("git clone #{ENV['tests_repo']}")
+
+# use custom branch in case it was specified
+if (ENV['tests_branch'])
+  Dir.chdir("#{jmeter_test_path}/#{tests_repo_name}")  
+  raise "Unable to checkout #{ENV['tests_branch']}. Please, verify #{ENV['tests_repo']} setup" unless system("git checkout #{ENV['tests_branch']}")  
+end
+
 Dir.chdir("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}")
 
 
@@ -74,6 +81,14 @@ jmeter_cmd=[
 ].join(' ')
 
 $logger.info "Launching JMeter using compiled command line: #{jmeter_cmd}"
+
+# checking for the custom jmeter.sh file   
+if (File.exists?("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/jmeter"))
+  $logger.info "#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/jmeter file was found"
+  $logger.info "Replacing default jmeter executable file with test defined script"
+  FileUtils.cp("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/jmeter",'/opt/apache-jmeter-5.1.1/bin')
+  FileUtils.chmod 0755,'/opt/apache-jmeter-5.1.1/bin/jmeter'
+end
 
 build_started  = (DateTime.now.new_offset(0) - (5/86400.0)).strftime("%Y-%m-%d %H:%M:%S") # Get the build start time and decrease it because of InfluxDB time delays
 # Starting tests
