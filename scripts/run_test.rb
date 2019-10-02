@@ -72,7 +72,7 @@ $logger.info "Launching JMeter using compiled command line: #{jmeter_cmd}"
 build_started = Time.now
 # Starting tests
 jmeter_cmd_res = system(jmeter_cmd)
-build_finished = Time.now.to_i 
+build_finished = Time.now 
 
 # Getting aggregated data 
 get_CSV = Influx.new()
