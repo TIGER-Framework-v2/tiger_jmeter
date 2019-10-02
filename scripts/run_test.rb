@@ -1,11 +1,10 @@
 require 'yaml'
 require 'fileutils'
-require 'date'
+#require 'date'
 
 Dir["classes/*.rb"].each {|file| require_relative file }
 
 
-# defining variables
 tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')
 current_build_number = ENV['current_build_number'].to_i
 project_id           = ENV['project_id']
@@ -20,7 +19,7 @@ jmeter_cmd_options   = ''
 jmeter_bin_path      = '/opt/apache-jmeter-5.1.1/bin/jmeter'
 tiger_influxdb_extension_path = '/opt/tiger/scripts/tiger_extensions/jmeter_tiger_extension.jmx'
 
-# creating folders
+
 [
   data_folder,
   logs_folder
@@ -33,12 +32,7 @@ Dir.chdir jmeter_test_path
 raise "Tests were not downloaded successfully" unless system("git clone #{ENV['tests_repo']}")
 Dir.chdir("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}")
 
-
-
 test_settings_hash=YAML.load(File.read("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.yml"))
-
-# reading tests settings from the YAML configuration file
-
 
 internal_jmeter_cmd_options_hash={
   "build.id"        => "#{current_build_number}",
@@ -74,10 +68,12 @@ jmeter_cmd=[
 ].join(' ')
 
 $logger.info "Launching JMeter using compiled command line: #{jmeter_cmd}"
-
-build_started  = (DateTime.now.new_offset(0) - (5/86400.0)).strftime("%Y-%m-%d %H:%M:%S") # Get the build start time and decrease it because of InfluxDB time delays
+#build_started  = (DateTime.now.new_offset(0) - (5/86400.0)).strftime("%Y-%m-%d %H:%M:%S") # Get the build start time and decrease it because of InfluxDB time delays
+build_started = Time.now
 # Starting tests
 jmeter_cmd_res = system(jmeter_cmd)
+build_finished = Time.now.to_i 
+
 # Getting aggregated data 
 get_CSV = Influx.new()
 get_CSV.get_aggregated_data_to_csv(build_started,test_results_folder)
