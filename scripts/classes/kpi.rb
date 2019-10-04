@@ -11,7 +11,7 @@ class Kpi
       exit 1
   	end
 
-  	begin 
+  	begin
       @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.kpi.csv", :headers => true, converters: :numeric)
   	rescue
       $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.kpi.csv file"

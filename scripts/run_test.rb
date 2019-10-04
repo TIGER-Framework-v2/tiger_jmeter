@@ -3,17 +3,11 @@ require 'fileutils'
 
 Dir["classes/*.rb"].each {|file| require_relative file }
 
-
 tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')  #Used only for folder creation snd in KPI.
-current_build_number = ENV['current_build_number'].to_i
-project_id           = ENV['project_id']
-env_type             = ENV['env_type']
-lg_id                = ENV['lg_id']
-test_type            = ENV['test_type']
 jmeter_test_path     = "/opt/tiger/jmeter_test"
-test_results_folder = "/opt/tiger/#{test_type}/results"
-data_folder          = test_results_folder+"/data"
-logs_folder          = test_results_folder+"/log"
+test_results_folder  = "/opt/tiger/#{ENV['test_type']}/results"
+data_folder          = test_results_folder + "/data"
+logs_folder          = test_results_folder + "/log"
 jmeter_cmd_options   = ''
 jmeter_bin_path      = '/opt/apache-jmeter-5.1.1/bin/jmeter'
 tiger_influxdb_extension_path = '/opt/tiger/scripts/tiger_extensions/jmeter_tiger_extension.jmx'
@@ -29,24 +23,24 @@ $logger=TigerLogger.new(logs_folder)
 $logger.info "Clonning tests repository: git clone #{ENV['tests_repo']}"
 Dir.chdir jmeter_test_path
 raise "Tests were not downloaded successfully" unless system("git clone #{ENV['tests_repo']}")
-Dir.chdir("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}")
+Dir.chdir("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}")
 
-test_settings_hash=YAML.load(File.read("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.yml"))
+test_settings_hash=YAML.load(File.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.yml"))
 
 internal_jmeter_cmd_options_hash={
-  "build.id"        => "#{current_build_number}",
-  "report.csv"      => "#{data_folder}/#{test_type}_html_report.csv",
-  "errors.jtl"      => "#{data_folder}/#{test_type}_error.jtl",
-  "test.type"       => "#{test_type}",
-  "lg.id"           => "#{lg_id}",
-  "influx.protocol" => "#{ENV['influx_protocol']}",
-  "influx.host"     => "#{ENV['influx_host']}",
-  "influx.port"     => "#{ENV['influx_port']}",
-  "influx.db"       => "#{ENV['influx_db']}",
-  "project.id"      => "#{project_id}",
-  "influx.username" => "#{ENV['influx_username']}",
-  "influx.password" => "#{ENV['influx_password']}",
-  "env.type"        => "#{env_type}"
+  "build.id"        => ENV['current_build_number'],
+  "report.csv"      => "#{data_folder}/#{ENV['test_type']}_html_report.csv",
+  "errors.jtl"      => "#{data_folder}/#{ENV['test_type']}_error.jtl",
+  "test.type"       => ENV['test_type'],
+  "lg.id"           => ENV['lg_id'],
+  "influx.protocol" => ENV['influx_protocol'],
+  "influx.host"     => ENV['influx_host'],
+  "influx.port"     => ENV['influx_port'],
+  "influx.db"       => ENV['influx_db'],
+  "project.id"      => ENV['project_id'],
+  "influx.username" => ENV['influx_username'],
+  "influx.password" => ENV['influx_password'],
+  "env.type"        => ENV['env_type']
 }
 
 test_settings_hash['jmeter_args'].merge!(internal_jmeter_cmd_options_hash)
@@ -62,14 +56,13 @@ jmeter_cmd=[
   "-t #{extended_jmeter_plan_path}",
   "-p #{test_settings_hash['properties']}",
   jmeter_cmd_options.chomp,
-  "-l #{data_folder}/#{test_type}.jtl",
-  "-j #{logs_folder}/jmeter_#{test_type}.log"
+  "-l #{data_folder}/#{ENV['test_type']}.jtl",
+  "-j #{logs_folder}/jmeter_#{ENV['test_type']}.log"
 ].join(' ')
 
 $logger.info "Launching JMeter using compiled command line: #{jmeter_cmd}"
 #build_started  = (DateTime.now.new_offset(0) - (5/86400.0)).strftime("%Y-%m-%d %H:%M:%S") # Get the build start time and decrease it because of InfluxDB time delays
 build_started = Time.now
-# Starting tests
 jmeter_cmd_res = system(jmeter_cmd)
 build_finished = Time.now 
 
