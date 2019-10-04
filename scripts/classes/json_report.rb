@@ -3,7 +3,7 @@ class Json_report
   require 'influxdb'
 
   def initialize(build_started, build_finished)
-    @build_started  = build_started,
+    @build_started  = build_started
     @build_finished = build_finished
 
     influxdbUrl      = ENV['influx_protocol'] + '://' + ENV['influx_host'] + ':' + ENV['influx_port'] + '/'
@@ -14,14 +14,18 @@ class Json_report
                   password: ENV['influx_password'],
                   open_timeout: 320,
                   read_timeout: 320
-
   end
   
-  def generate_json_report
-    test_results_section
-    test_settings_section
-    tiger_settings_section
-    transactions_details_section
+  def generate_json_report (result_folder)
+    report = Hash.new
+    report['test_results']        = test_results_section
+    report['test_settings']       = test_settings_section
+    report['tiger_settings']      = tiger_settings_section
+    report['transaction_details'] = transactions_details_section
+
+    File.open("#{result_folder}/test_report.json","w") do |f|
+      f.write(b.to_json)
+    end
   end
 
   ##### Private methods #####
@@ -29,7 +33,7 @@ class Json_report
 
   def test_results_section
     test_results = Hash.new
-    test_results[:test_results] = {
+    test_results = {
       "lg_count"                   => 'HARDCODED',                 # Not avaliable
       "grafana_link"               => "HARDCODED",                 # Not avaliable
       "start_time"                 => @build_started.to_i,
@@ -50,7 +54,7 @@ class Json_report
 
   def test_settings_section
     test_settings = Hash.new
-    test_results[:test_settings] = {
+    test_settings  = {
       "comment"         => "HARDCODED",
       "version_id"      => "HARDCODED",
       "build_id"        => ENV['current_build_number'].to_i,
@@ -66,7 +70,7 @@ class Json_report
 
   def tiger_settings_section
     tiger_settings = Hash.new
-    tiger_settings[:tiger_settings] = {
+    tiger_settings = {
       "docker_host"    =>  "HARDCODED",
       "lg_id"          =>  "HARDCODED",
       "tests_repo"     =>  ENV['tests_repo'],
