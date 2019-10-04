@@ -1,11 +1,10 @@
 require 'yaml'
 require 'fileutils'
-#require 'date'
 
 Dir["classes/*.rb"].each {|file| require_relative file }
 
 
-tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')
+tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')  #Used only for folder creation snd in KPI.
 current_build_number = ENV['current_build_number'].to_i
 project_id           = ENV['project_id']
 env_type             = ENV['env_type']

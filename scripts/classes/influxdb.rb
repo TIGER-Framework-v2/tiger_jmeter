@@ -20,7 +20,7 @@ class Influx
     @current_build_number = ENV['current_build_number'].to_i
 
     influxdbUrl      = "#{@influx_protocol}://#{@influx_host}:#{@influx_port}/"
-    influxdbDatabase = "#{@influx_db}"
+    influxdbDatabase = @influx_db
     @influxdb = InfluxDB::Client.new influxdbDatabase,
                   url: influxdbUrl,
                   username: @influx_username,

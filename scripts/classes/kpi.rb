@@ -56,7 +56,7 @@ class Kpi
     if @predefined_kpi['sampler_label'].include?('.*')
       any_values_from_kpi = @predefined_kpi.select { |item| item[0] == '.*' }             # Find all '.*' values and add them to separate array
       any_values_from_kpi.delete_if { |row| row['scope_name'].nil? }                      # Delete empty elements from array
-      @predefined_kpi.delete_if { |row| any_values_from_kpi.include?(row) }               # Delete all '.*' from KPI's
+      @predefined_kpi.delete_if { |row| any_values_from_kpi.include?(row) }               # Delete all '.*' from KPI's hash, to exclude them from the next checks
     end
 
     @aggregated_data_hash['sampler_label'].each do |sampler_label_name|
@@ -96,6 +96,8 @@ class Kpi
 
     if @red_threshold_violations_count > 0
       p 'Test has exceeded values'
+    elsif @yellow_threshold_violations_count > 0
+      p 'Test passed with warnings'
     else
       p 'Test succeeded'
     end
