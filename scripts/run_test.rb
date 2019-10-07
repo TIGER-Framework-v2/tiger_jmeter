@@ -5,9 +5,11 @@ Dir["classes/*.rb"].each {|file| require_relative file }
 
 tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')  #Used only for folder creation snd in KPI.
 jmeter_test_path     = "/opt/tiger/jmeter_test"
+
 test_results_folder  = "/opt/tiger/#{ENV['test_type']}/results"
 data_folder          = test_results_folder + "/data"
 logs_folder          = test_results_folder + "/log"
+
 jmeter_cmd_options   = ''
 jmeter_bin_path      = '/opt/apache-jmeter-5.1.1/bin/jmeter'
 tiger_influxdb_extension_path = '/opt/tiger/scripts/tiger_extensions/jmeter_tiger_extension.jmx'
@@ -48,7 +50,6 @@ test_settings_hash['jmeter_args'].each {|setting,value| jmeter_cmd_options += "-
 
 tiger_extension_obj=TigerExtension.new(test_settings_hash['plan'],tiger_influxdb_extension_path)
 extended_jmeter_plan_path=tiger_extension_obj.extend_jmeter_jmx(data_folder)
-
 
 # compiling command line for the tests execution
 jmeter_cmd=[
