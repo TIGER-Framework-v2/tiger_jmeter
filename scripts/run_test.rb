@@ -62,7 +62,6 @@ jmeter_cmd=[
 ].join(' ')
 
 $logger.info "Launching JMeter using compiled command line: #{jmeter_cmd}"
-#build_started  = (DateTime.now.new_offset(0) - (5/86400.0)).strftime("%Y-%m-%d %H:%M:%S") # Get the build start time and decrease it because of InfluxDB time delays
 build_started = Time.now
 jmeter_cmd_res = system(jmeter_cmd)
 build_finished = Time.now 
@@ -74,6 +73,10 @@ get_CSV.get_aggregated_data_to_csv(build_started,test_results_folder)
 # Applying KPI analyze
 kpi = Kpi.new(tests_repo_name,jmeter_test_path,test_results_folder)
 kpi.kpi_analyse
+
+# Generate JSON report
+json_report = Json_report.new(build_started, build_finished)
+json_report.generate_json_report(test_results_folder)
 
 $logger.info jmeter_cmd_res
 $logger.info "Results folder: #{test_results_folder}"

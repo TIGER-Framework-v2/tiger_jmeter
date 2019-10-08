@@ -31,12 +31,10 @@ class Influx
   
   def get_aggregated_data_to_csv(build_started,test_results_folder)
     start_time = (build_started - 5).strftime("%Y-%m-%d %H:%M:%S") # decrease time because of InfluxDB time delays
-    $logger.info "#{start_time}"
     getBuildDurationTime(start_time)
     getAggregatedData
     aggregatedDataToCsv(test_results_folder)
     sendAggregatedDataToDB                                         # Send data to InfluxDB 'aggregatedReport' measurements
-    $logger.info "Finish sending"
   end
 
   ##### Private methods #####
