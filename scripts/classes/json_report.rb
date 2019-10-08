@@ -24,7 +24,7 @@ class Json_report
     report['transaction_details'] = transactions_details_section
 
     File.open("#{result_folder}/test_report.json","w") do |f|
-      f.write(f.to_json)
+      f.write(report.to_json)
     end
   end
 
