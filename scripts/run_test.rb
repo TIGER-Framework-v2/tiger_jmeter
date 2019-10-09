@@ -3,7 +3,7 @@ require 'fileutils'
 
 Dir["classes/*.rb"].each {|file| require_relative file }
 
-tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')  #Used only for folder creation snd in KPI.
+tests_repo_name      = ENV['tests_repo'].split('/').last.gsub('.git','')  # Used only for folder creation snd in KPI. Should be removed
 jmeter_test_path     = "/opt/tiger/jmeter_test"
 
 test_results_folder  = "/opt/tiger/#{ENV['test_type']}/results"

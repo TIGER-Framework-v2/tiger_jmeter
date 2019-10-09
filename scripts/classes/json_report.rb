@@ -33,6 +33,11 @@ class Json_report
 
   def test_results_section
     test_results = Hash.new
+    max_threads_count = @influxdb.query "SELECT SUM(\"max_threads_value\") FROM (SELECT max(\"startedThreads\") as \"max_threads_value\" FROM \"virtualUsers\" WHERE \"projectName\" = #{ENV['project_id']} AND \"envType\" = #{ENV['env_type']} AND \"testType\" = #{ENV['test_type']} AND \"buildID\" = #{ENV['current_build_number']} AND time >= #{@build_started} and time <= #{@build_finished} GROUP BY \"loadGenerator\")"
+    $logger.info "======"
+    $logger.info max_threads_count
+    $logger.info "======"
+
     test_results = {
       "lg_count"                   => 'HARDCODED',                 # Not avaliable
       "grafana_link"               => "HARDCODED",                 # Not avaliable
