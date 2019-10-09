@@ -12,6 +12,7 @@ class Json_report
                   url: influxdbUrl,
                   username: ENV['influx_username'],
                   password: ENV['influx_password'],
+                  retry: 5,
                   open_timeout: 320,
                   read_timeout: 320
   end
@@ -33,10 +34,10 @@ class Json_report
 
   def test_results_section
     test_results = Hash.new
-    max_threads_count = @influxdb.query "SELECT SUM(\"max_threads_value\") FROM (SELECT max(\"startedThreads\") as \"max_threads_value\" FROM \"virtualUsers\" WHERE \"projectName\" = #{ENV['project_id']} AND \"envType\" = #{ENV['env_type']} AND \"testType\" = #{ENV['test_type']} AND \"buildID\" = #{ENV['current_build_number']} AND time >= #{@build_started} and time <= #{@build_finished} GROUP BY \"loadGenerator\")"
-    $logger.info "======"
-    $logger.info max_threads_count
-    $logger.info "======"
+    max_threads_count = @influxdb.query "SELECT SUM(\"max_threads_value\") FROM (SELECT max(\"startedThreads\") as \"max_threads_value\" FROM \"virtualUsers\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"loadGenerator\")"
+    total             = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
+    total_passed      = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"errorCount\" = 0 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
+    total_failed      = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"errorCount\" = 1 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
 
     test_results = {
       "lg_count"                   => 'HARDCODED',                 # Not avaliable
@@ -44,12 +45,12 @@ class Json_report
       "start_time"                 => @build_started.to_i,
       "end_time"                   => @build_finished.to_i,
       "duration"                   => @build_finished.to_i - @build_started.to_i,
-      "status"                     => "pass|fail|warning",               # Not availble
-      "max_threads_count"          => 4600,                              # Take from request
+      "status"                     => "HARDCODED",               # Not availble
+      "max_threads_count"          => max_threads_count[0]['values'][0]['sum'],
       "transactions"               => {
-        "total"                    => 56798993, # Take from request
-        "total_passed"             => 56798342,   # Take from request
-        "total_failed"             => 821,        # Take from request
+        "total"                    => total[0]['values'][0]['count'],
+        "total_passed"             => total_passed[0]['values'][0]['count'],
+        "total_failed"             => total_failed[0]['values'][0]['count'],
         "red_transactions_perc"    => 5,          # Take from request
         "yellow_transactions_perc" => 10          # Take from request
       }
@@ -87,7 +88,8 @@ class Json_report
   end
 
   def transactions_details_section
-
+    transaction_details = Hash.new
+    data = @influxdb.query "SELECT count(responseTime) as \"Total Count\", sum(errorCount) as \"Error Count\", mean(responseTime)/1000 as Average, median(responseTime)/1000 as Median, percentile(responseTime, 90)/1000 as \"90%% Line\",percentile(responseTime, 95)/1000 as \"95%% Line\",percentile(responseTime, 99)/1000 as \"99%% Line\", min(responseTime)/1000 as Min, max(responseTime)/1000 as Max, (sum(errorCount)/count(responseTime))*100 as \"Error Rate\", stddev(\"responseTime\") as \"Standard Deviation\" FROM \"requestsRaw\" WHERE \"errorCount\" = 1 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"requestName\""
   end
 
 end

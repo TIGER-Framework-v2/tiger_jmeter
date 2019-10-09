@@ -25,6 +25,7 @@ class Influx
                   url: influxdbUrl,
                   username: @influx_username,
                   password: @influx_password,
+                  retry: 5,
                   open_timeout: 320,
                   read_timeout: 320
   end  
