@@ -17,9 +17,9 @@ class Json_report
                   read_timeout: 320
   end
   
-  def generate_json_report (result_folder)
+  def generate_json_report (result, result_folder)
     report = Hash.new
-    report['test_results']        = test_results_section
+    report['test_results']        = test_results_section(result)
     report['test_settings']       = test_settings_section
     report['tiger_settings']      = tiger_settings_section
     report['transaction_details'] = transactions_details_section
@@ -32,7 +32,7 @@ class Json_report
   ##### Private methods #####
   private
 
-  def test_results_section
+  def test_results_section(result)
     test_results = Hash.new
     max_threads_count = @influxdb.query "SELECT SUM(\"max_threads_value\") FROM (SELECT max(\"startedThreads\") as \"max_threads_value\" FROM \"virtualUsers\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"loadGenerator\")"
     total             = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
@@ -45,7 +45,7 @@ class Json_report
       "start_time"                 => @build_started.to_i,
       "end_time"                   => @build_finished.to_i,
       "duration"                   => @build_finished.to_i - @build_started.to_i,
-      "status"                     => "HARDCODED",               # Not availble
+      "status"                     => result,               # Not availble
       "max_threads_count"          => max_threads_count[0]['values'][0]['sum'],
       "transactions"               => {
         "total"                    => total[0]['values'][0]['count'],

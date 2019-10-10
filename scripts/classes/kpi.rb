@@ -95,11 +95,14 @@ class Kpi
     end
 
     if @red_threshold_violations_count > 0
-      p 'Test has exceeded values'
+      $logger.error 'Test has exceeded values'
+      return 'failed'
     elsif @yellow_threshold_violations_count > 0
-      p 'Test passed with warnings'
+      $logger.info 'Test passed with warnings'
+      return 'warning'
     else
-      p 'Test succeeded'
+      $logger.info 'Test succeeded'
+      return 'success'
     end
   end
 end
