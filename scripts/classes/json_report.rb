@@ -89,7 +89,26 @@ class Json_report
 
   def transactions_details_section
     transaction_details = Hash.new
-    data = @influxdb.query "SELECT count(responseTime) as \"Total Count\", sum(errorCount) as \"Error Count\", mean(responseTime)/1000 as Average, median(responseTime)/1000 as Median, percentile(responseTime, 90)/1000 as \"90%% Line\",percentile(responseTime, 95)/1000 as \"95%% Line\",percentile(responseTime, 99)/1000 as \"99%% Line\", min(responseTime)/1000 as Min, max(responseTime)/1000 as Max, (sum(errorCount)/count(responseTime))*100 as \"Error Rate\", stddev(\"responseTime\") as \"Standard Deviation\" FROM \"requestsRaw\" WHERE \"errorCount\" = 1 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"requestName\""
+    data = @influxdb.query "SELECT count(responseTime) as \"Total Count\", count(responseTime)-sum(errorCount) as \"Successful Count\", sum(errorCount) as \"Error Count\", mean(responseTime)/1000 as Average, median(responseTime)/1000 as Median, percentile(responseTime, 90)/1000 as \"90%% Line\",percentile(responseTime, 95)/1000 as \"95%% Line\",percentile(responseTime, 99)/1000 as \"99%% Line\", min(responseTime)/1000 as Min, max(responseTime)/1000 as Max, (sum(errorCount)/count(responseTime))*100 as \"Error Rate\", stddev(\"responseTime\") as \"Standard Deviation\" FROM \"requestsRaw\" WHERE \"errorCount\" = 1 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"requestName\""
+    data.each do |el|
+      transaction = Hash.new
+      transaction[el['tags']['requestName']] = {
+        "Total Count"        => el['values']['Total Count'],
+        "Error Count"        => el['values']['Error Count'],
+        "Successful Count"   => el['values']['Successful Count'],
+        "Average"            => el['values']['Average'],
+        "Median"             => el['values']['Median'],
+        "90% Line"           => el['values']['90% Line'],
+        "95% Line"           => el['values']['95% Line'],
+        "99% Line"           => el['values']['99% Line'],
+        "Min"                => el['values']['Min'],
+        "Max"                => el['values']['Max'],
+        "Error Rate"         => el['values']['Error Rate'],
+        "Standard Deviation" => el['values']['Standard Deviation']
+      }
+      transaction_details << transaction
+    end
+    return transaction_details
   end
 
 end
