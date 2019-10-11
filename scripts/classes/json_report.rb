@@ -40,19 +40,19 @@ class Json_report
     total_failed      = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"errorCount\" = 1 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
 
     test_results = {
-      "lg_count"                   => 'HARDCODED',                 # Not avaliable
-      "grafana_link"               => "HARDCODED",                 # Not avaliable
+      "lg_count"                   => 'HARDCODED',
+      "grafana_link"               => "HARDCODED",
       "start_time"                 => @build_started.to_i,
       "end_time"                   => @build_finished.to_i,
       "duration"                   => @build_finished.to_i - @build_started.to_i,
-      "status"                     => status,               # Not availble
+      "status"                     => status,
       "max_threads_count"          => max_threads_count[0]['values'][0]['sum'],
       "transactions"               => {
         "total"                    => total[0]['values'][0]['count'],
         "total_passed"             => total_passed[0]['values'][0]['count'],
         "total_failed"             => total_failed[0]['values'][0]['count'],
-        "red_transactions_perc"    => 5,          # Take from request
-        "yellow_transactions_perc" => 10          # Take from request
+        "red_transactions_perc"    => "HARDCODED",
+        "yellow_transactions_perc" => "HARDCODED"
       }
     }
     return test_results
@@ -91,77 +91,21 @@ class Json_report
     transaction_details = Hash.new
     data = @influxdb.query "SELECT count(responseTime) as \"Total Count\", count(responseTime)-sum(errorCount) as \"Successful Count\", sum(errorCount) as \"Error Count\", mean(responseTime)/1000 as Average, median(responseTime)/1000 as Median, percentile(responseTime, 90)/1000 as \"90%% Line\",percentile(responseTime, 95)/1000 as \"95%% Line\",percentile(responseTime, 99)/1000 as \"99%% Line\", min(responseTime)/1000 as Min, max(responseTime)/1000 as Max, (sum(errorCount)/count(responseTime))*100 as \"Error Rate\", stddev(\"responseTime\") as \"Standard Deviation\" FROM \"requestsRaw\" WHERE \"errorCount\" = 1 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"requestName\""
     data.each do |el|
-      transaction = Hash.new
-      transaction[el['tags']['requestName']] = {
-        "Total Count"        => el['values']['Total Count'],
-        "Error Count"        => el['values']['Error Count'],
-        "Successful Count"   => el['values']['Successful Count'],
-        "Average"            => el['values']['Average'],
-        "Median"             => el['values']['Median'],
-        "90% Line"           => el['values']['90% Line'],
-        "95% Line"           => el['values']['95% Line'],
-        "99% Line"           => el['values']['99% Line'],
-        "Min"                => el['values']['Min'],
-        "Max"                => el['values']['Max'],
-        "Error Rate"         => el['values']['Error Rate'],
-        "Standard Deviation" => el['values']['Standard Deviation']
+      transaction_details[el['tags']['requestName']] = {
+        "Total Count"        => el['values'][0]['Total Count'],
+        "Error Count"        => el['values'][0]['Error Count'],
+        "Successful Count"   => el['values'][0]['Successful Count'],
+        "Average"            => el['values'][0]['Average'],
+        "Median"             => el['values'][0]['Median'],
+        "90% Line"           => el['values'][0]['90% Line'],
+        "95% Line"           => el['values'][0]['95% Line'],
+        "99% Line"           => el['values'][0]['99% Line'],
+        "Min"                => el['values'][0]['Min'],
+        "Max"                => el['values'][0]['Max'],
+        "Error Rate"         => el['values'][0]['Error Rate'],
+        "Standard Deviation" => el['values'][0]['Standard Deviation']
       }
-      transaction_details << transaction
     end
     return transaction_details
   end
-
 end
-#{
-#  "test_result":{    
-#    "lg_count": 3,
-#    "grafana_link": "https:// ......",
-#    "start_time": "1565331600000",               # default time zone: UTC, parameter is configurable
-#    "end_time": "1565362800000", # default time zone: UTC, parameter is configurable
-#    "duration":300, # hh:mm:ss
-#    "status": "pass|fail|warning",     # available in case KPI analysis was enabled
-#    "max_threads_count": 4600,
-#    "transactions_":{
-#      "total":"56798993",
-#      "total_passed": 56798342, 
-#      "total_failed": 821, 
-#      "red_transactions_perc":5,                          # available in case KPI analysis was enabled
-#      "yellow_transactions_perc":10   # available in case KPI analysis was enabled                                          
-#    },                             
-#  },
-#  "test_settings":{
-#    "comment": "Basic test",
-#    "version_id": "v.2.0.1",
-#    "build_id":7,
-#    "project_id":"Test",
-#    "env_type": "test_env",                 
-#    "test_type": "basic",
-#    "test_duration":240,
-#    "target_host": "mega.com",
-#    "target_protocol": "https"
-#  },
-#  "tiger_settings": {
-#    "docker_host": "fqdn(s)",
-#    "lg_id": "lg_1 lc_2",
-#    "tests_repo": "git@test.git",        # SSH available Git compatible server repository
-#    "influx_db_name": "tests_results",
-#    "influxdb_host": "fqdn",                                # yaml based configurable parameter
-#    "influxdb_port": "fqdn",                # yaml based configurable parameter
-#  },
-#  "transactions_details":{     # aggregated data
-#    "01.TrxName01": {
-#      "passed_count": 100,
-#      "failed_count": 1,
-#      "avg":{
-#        "test_value":120,                             
-#        "red_threshold":10,                        # available in case KPI analysis was enabled
-#        "yellow_threshold":100 # available in case KPI analysis was enabled
-#      },
-#      "min":{
-#        "test_value":12,
-#        "red_threshold":10,                        # available in case KPI analysis was enabled
-#        "yellow_threshold":100 # available in case KPI analysis was enabled
-#      },
-#                                ....
-#  }
-#}
