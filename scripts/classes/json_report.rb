@@ -17,9 +17,9 @@ class Json_report
                   read_timeout: 320
   end
   
-  def generate_json_report (status, result_folder)
+  def generate_json_report (kpi_results, result_folder)
     report = Hash.new
-    report['test_results']        = test_results_section(status)
+    report['test_results']        = test_results_section(kpi_results['status'],kpi_results['red_threshold_allowed'])
     report['test_settings']       = test_settings_section
     report['tiger_settings']      = tiger_settings_section
     report['transaction_details'] = transactions_details_section
@@ -32,7 +32,7 @@ class Json_report
   ##### Private methods #####
   private
 
-  def test_results_section(status)
+  def test_results_section(status,red_threshold_allowed)
     test_results = Hash.new
     max_threads_count = @influxdb.query "SELECT SUM(\"max_threads_value\") FROM (SELECT max(\"startedThreads\") as \"max_threads_value\" FROM \"virtualUsers\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"loadGenerator\")"
     total             = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
@@ -51,7 +51,7 @@ class Json_report
         "total"                    => total[0]['values'][0]['count'],
         "total_passed"             => total_passed[0]['values'][0]['count'],
         "total_failed"             => total_failed[0]['values'][0]['count'],
-        "red_transactions_perc"    => "HARDCODED",
+        "red_transactions_perc"    => red_threshold_allowed,
         "yellow_transactions_perc" => "HARDCODED"
       }
     }

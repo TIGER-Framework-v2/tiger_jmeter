@@ -1,8 +1,8 @@
 class Kpi
   require 'csv'
+  require 'yaml'
 
   def initialize(tests_repo_name,jmeter_test_path,test_results_folder)
-    test_type = ENV['test_type']
 
     begin
       @aggregated_data_hash = CSV.read("#{test_results_folder}/log/aggregatedData.csv", :headers => true, converters: :numeric)
@@ -12,9 +12,16 @@ class Kpi
   	end
 
   	begin
-      @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.kpi.csv", :headers => true, converters: :numeric)
+      @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv", :headers => true, converters: :numeric)
   	rescue
-      $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.kpi.csv file"
+      $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv file"
+      exit 1
+    end
+
+    begin
+      @test_settings = YAML.load(File.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.yml"))
+    rescue
+      $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.yml file"
       exit 1
     end
   end
@@ -94,15 +101,22 @@ class Kpi
       end
     end
 
-    if @red_threshold_violations_count > 0
+    error_perc = ((@red_threshold_violations_count.to_f/@predefined_kpi.count) * 100).round(2)
+
+    if error_perc >= @test_settings['red_threshold']
       $logger.error 'Test has exceeded values'
-      return 'failed'
+      status = 'failed'
     elsif @yellow_threshold_violations_count > 0
       $logger.info 'Test passed with warnings'
-      return 'warning'
+      status = 'warning'
     else
       $logger.info 'Test succeeded'
-      return 'success'
+      status = 'success'
     end
+
+    return {
+              "status" => status,
+              "red_threshold_allowed" => @test_settings['red_threshold']
+           }
   end
 end
