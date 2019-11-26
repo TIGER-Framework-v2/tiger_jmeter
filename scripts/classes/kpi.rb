@@ -101,7 +101,8 @@ class Kpi
       end
     end
 
-    error_perc = ((@red_threshold_violations_count.to_f/@predefined_kpi.count) * 100).round(2)
+    error_perc   = ((@red_threshold_violations_count.to_f/@predefined_kpi.count) * 100).round(2)
+    warning_perc = ((@yellow_threshold_violations_count.to_f/@predefined_kpi['yellow_threshold'].compact.size) * 100).round(2)
 
     if error_perc >= @test_settings['red_threshold']
       $logger.error 'Test has exceeded values'
@@ -116,7 +117,8 @@ class Kpi
 
     return {
               "status" => status,
-              "red_threshold_allowed" => @test_settings['red_threshold']
+              "yellow_threshold_perc" => warning_perc,
+              "red_threshold_perc" => error_perc
            }
   end
 end
