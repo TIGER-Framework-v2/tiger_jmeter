@@ -13,6 +13,7 @@ class Kpi
 
   	begin
       @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv", :headers => true, converters: :numeric)
+      @kpi_list       = @predefined_kpi.dup
   	rescue
       $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv file"
       exit 1
@@ -101,8 +102,8 @@ class Kpi
       end
     end
 
-    error_perc   = ((@red_threshold_violations_count.to_f/@predefined_kpi.count) * 100).round(2)
-    warning_perc = ((@yellow_threshold_violations_count.to_f/@predefined_kpi['yellow_threshold'].compact.size) * 100).round(2)
+    error_perc   = ((@red_threshold_violations_count.to_f/@kpi_list.count) * 100).round(2)
+    warning_perc = ((@yellow_threshold_violations_count.to_f/@kpi_list['yellow_threshold'].compact.size) * 100).round(2)
 
     if error_perc >= @test_settings['red_threshold']
       $logger.error 'Test has exceeded values'

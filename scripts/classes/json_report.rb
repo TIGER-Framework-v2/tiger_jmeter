@@ -19,7 +19,7 @@ class Json_report
   
   def generate_json_report (kpi_results, result_folder)
     report = Hash.new
-    report['test_results']        = test_results_section(kpi_results['status'],kpi_results['red_threshold_perc'])
+    report['test_results']        = test_results_section(kpi_results['status'],kpi_results['red_threshold_perc'],kpi_results['yellow_threshold_perc'])
     report['test_settings']       = test_settings_section
     report['tiger_settings']      = tiger_settings_section
     report['transaction_details'] = transactions_details_section
