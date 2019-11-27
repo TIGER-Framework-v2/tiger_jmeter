@@ -13,7 +13,7 @@ class Kpi
 
   	begin
       @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv", :headers => true, converters: :numeric)
-      @kpi_list       = @predefined_kpi.dup
+      @kpi_list       = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv", :headers => true, converters: :numeric)
   	rescue
       $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv file"
       exit 1
