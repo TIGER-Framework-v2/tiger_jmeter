@@ -13,7 +13,6 @@ class Kpi
 
   	begin
       @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv", :headers => true, converters: :numeric)
-      @kpi_list       = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv", :headers => true, converters: :numeric)
   	rescue
       $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv file"
       exit 1
@@ -67,6 +66,8 @@ class Kpi
       @predefined_kpi.delete_if { |row| any_values_from_kpi.include?(row) }               # Delete all '.*' from KPI's hash, to exclude them from the next checks
     end
 
+    checks_count = 0
+
     @aggregated_data_hash['sampler_label'].each do |sampler_label_name|
 
       p "Working with #{sampler_label_name}"
@@ -92,6 +93,7 @@ class Kpi
 
       if !selected_kpi.empty?                                                              # Start analysing KPI's
         selected_kpi.each do |item|
+          checks_count += 1
           scope_name         = item['scope_name']
           report_scope_index = @aggregated_data_hash.headers.index(scope_name)
           yellow_threshold   = item['yellow_threshold']
@@ -102,8 +104,8 @@ class Kpi
       end
     end
 
-    error_perc   = ((@red_threshold_violations_count.to_f/@kpi_list.count) * 100).round(2)
-    warning_perc = ((@yellow_threshold_violations_count.to_f/@kpi_list['yellow_threshold'].compact.size) * 100).round(2)
+    error_perc   = ((@red_threshold_violations_count.to_f/checks_count) * 100).round(2)
+    warning_perc = ((@yellow_threshold_violations_count.to_f/checks_count) * 100).round(2)
 
     if error_perc >= @test_settings['red_threshold']
       $logger.error 'Test has exceeded values'
