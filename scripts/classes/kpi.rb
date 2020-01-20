@@ -43,7 +43,7 @@ class Kpi
         $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} < red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value < yellow_threshold
-        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} < yellow_threshold (#{yellow_threshold})"
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} < yellow_threshold (#{yellow_threshold}). Red threshold is #{red_threshold}"
         @yellow_threshold_violations_count += 1
       end
     when /aggregate_report_error/
@@ -51,7 +51,7 @@ class Kpi
         $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value.to_f > yellow_threshold
-        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold})"
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold}). Red threshold is #{red_threshold}"
         @yellow_threshold_violations_count += 1
       end
     else
@@ -59,7 +59,7 @@ class Kpi
         $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value > yellow_threshold
-        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold})"
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold}).Red threshold is #{red_threshold}"
         @yellow_threshold_violations_count += 1
       end
     end
