@@ -38,6 +38,7 @@ class Json_report
     total             = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
     total_passed      = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"errorCount\" = 0 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
     total_failed      = @influxdb.query "SELECT count(\"responseTime\") FROM \"requestsRaw\" WHERE \"errorCount\" = 1 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
+    total_error_rate  = @influxdb.query "SELECT (sum(errorCount)/count(responseTime))*100 as \"total_error_rate\" FROM \"requestsRaw\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s"
 
     test_results = {
       "lg_count"                   => 'HARDCODED',
@@ -51,6 +52,7 @@ class Json_report
         "total"                    => total[0]['values'][0]['count'],
         "total_passed"             => total_passed[0]['values'][0]['count'],
         "total_failed"             => total_failed[0]['values'][0]['count'],
+        "total_error_rate"         => total_error_rate[0]['values'][0]['total_error_rate'].to_f.round(2),
         "red_transactions_perc"    => red_threshold_perc,
         "yellow_transactions_perc" => yellow_threshold_perc
       }
@@ -89,21 +91,21 @@ class Json_report
 
   def transactions_details_section
     transaction_details = Hash.new
-    data = @influxdb.query "SELECT count(responseTime) as \"Total Count\", count(responseTime)-sum(errorCount) as \"Successful Count\", sum(errorCount) as \"Error Count\", mean(responseTime)/1000 as Average, median(responseTime)/1000 as Median, percentile(responseTime, 90)/1000 as \"90%% Line\",percentile(responseTime, 95)/1000 as \"95%% Line\",percentile(responseTime, 99)/1000 as \"99%% Line\", min(responseTime)/1000 as Min, max(responseTime)/1000 as Max, (sum(errorCount)/count(responseTime))*100 as \"Error Rate\", stddev(\"responseTime\") as \"Standard Deviation\" FROM \"requestsRaw\" WHERE \"errorCount\" = 1 AND \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"requestName\""
+    data = @influxdb.query "SELECT count(responseTime) as \"Total Count\", count(responseTime)-sum(errorCount) as \"Successful Count\", sum(errorCount) as \"Error Count\", mean(responseTime)/1000 as Average, median(responseTime)/1000 as Median, percentile(responseTime, 90)/1000 as \"90%% Line\",percentile(responseTime, 95)/1000 as \"95%% Line\",percentile(responseTime, 99)/1000 as \"99%% Line\", min(responseTime)/1000 as Min, max(responseTime)/1000 as Max, (sum(errorCount)/count(responseTime))*100 as \"Error Rate\", stddev(\"responseTime\") as \"Standard Deviation\" FROM \"requestsRaw\" WHERE \"projectName\" = '#{ENV['project_id']}' AND \"envType\" = '#{ENV['env_type']}' AND \"testType\" = '#{ENV['test_type']}' AND \"buildID\" = '#{ENV['current_build_number']}' AND time >= #{@build_started.to_i}s and time <= #{@build_finished.to_i}s GROUP BY \"requestName\""
     data.each do |el|
       transaction_details[el['tags']['requestName']] = {
         "Total Count"        => el['values'][0]['Total Count'],
         "Error Count"        => el['values'][0]['Error Count'],
         "Successful Count"   => el['values'][0]['Successful Count'],
-        "Average"            => el['values'][0]['Average'],
+        "Average"            => el['values'][0]['Average'].to_f.round(2),
         "Median"             => el['values'][0]['Median'],
         "90% Line"           => el['values'][0]['90% Line'],
         "95% Line"           => el['values'][0]['95% Line'],
         "99% Line"           => el['values'][0]['99% Line'],
         "Min"                => el['values'][0]['Min'],
         "Max"                => el['values'][0]['Max'],
-        "Error Rate"         => el['values'][0]['Error Rate'],
-        "Standard Deviation" => el['values'][0]['Standard Deviation']
+        "Error Rate"         => el['values'][0]['Error Rate'].to_f.round(2),
+        "Standard Deviation" => el['values'][0]['Standard Deviation'].to_f.round(2)
       }
     end
     return transaction_details

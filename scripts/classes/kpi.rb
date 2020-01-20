@@ -26,6 +26,16 @@ class Kpi
     end
   end
 
+  def count_gathered_values(csv_file)
+    # Counting number of gathered metrics for getting percentage of red and yellow thresholds
+    csv_file.delete('sampler_label')
+    lines = 0
+    csv_file.each {|row| lines += 1 }
+    columns = csv_file.headers.count
+    count = columns * lines
+    return count
+  end
+
   def analyze_metric(scope_name, sampler_label_name, red_threshold, yellow_threshold, report_value)
     case scope_name
     when /tps_rate|success_rate/
@@ -66,8 +76,6 @@ class Kpi
       @predefined_kpi.delete_if { |row| any_values_from_kpi.include?(row) }               # Delete all '.*' from KPI's hash, to exclude them from the next checks
     end
 
-    checks_count = 0
-
     @aggregated_data_hash['sampler_label'].each do |sampler_label_name|
 
       p "Working with #{sampler_label_name}"
@@ -93,7 +101,6 @@ class Kpi
 
       if !selected_kpi.empty?                                                              # Start analysing KPI's
         selected_kpi.each do |item|
-          checks_count += 1
           scope_name         = item['scope_name']
           report_scope_index = @aggregated_data_hash.headers.index(scope_name)
           yellow_threshold   = item['yellow_threshold']
@@ -103,7 +110,8 @@ class Kpi
         end
       end
     end
-
+    
+    checks_count = count_gathered_values(@aggregated_data_hash)
     error_perc   = ((@red_threshold_violations_count.to_f/checks_count) * 100).round(2)
     warning_perc = ((@yellow_threshold_violations_count.to_f/checks_count) * 100).round(2)
 
