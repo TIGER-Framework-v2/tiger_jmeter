@@ -22,6 +22,7 @@ tiger_influxdb_extension_path = '/opt/tiger/scripts/tiger_extensions/jmeter_tige
 
 # creating folders
 [
+  jmeter_test_path,
   data_folder,
   logs_folder
 ].each {|folder_path| FileUtils.mkdir_p(folder_path) unless File.exists?(folder_path)}
