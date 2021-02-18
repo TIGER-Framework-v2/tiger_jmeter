@@ -1,8 +1,8 @@
 class Kpi
   require 'csv'
+  require 'yaml'
 
   def initialize(tests_repo_name,jmeter_test_path,test_results_folder)
-    test_type = ENV['test_type']
 
     begin
       @aggregated_data_hash = CSV.read("#{test_results_folder}/log/aggregatedData.csv", :headers => true, converters: :numeric)
@@ -11,12 +11,29 @@ class Kpi
       exit 1
   	end
 
-  	begin 
-      @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.kpi.csv", :headers => true, converters: :numeric)
+  	begin
+      @predefined_kpi = CSV.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv", :headers => true, converters: :numeric)
   	rescue
-      $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{test_type}/#{test_type}.kpi.csv file"
+      $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.kpi.csv file"
       exit 1
     end
+
+    begin
+      @test_settings = YAML.load(File.read("#{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.yml"))
+    rescue
+      $logger.error "Can't read #{jmeter_test_path}/#{tests_repo_name}/#{ENV['test_type']}/#{ENV['test_type']}.yml file"
+      exit 1
+    end
+  end
+
+  def count_gathered_values(csv_file)
+    # Counting number of gathered metrics for getting percentage of red and yellow thresholds
+    csv_file.delete('sampler_label')
+    lines = 0
+    csv_file.each {|row| lines += 1 }
+    columns = csv_file.headers.count
+    count = columns * lines
+    return count
   end
 
   def analyze_metric(scope_name, sampler_label_name, red_threshold, yellow_threshold, report_value)
@@ -26,7 +43,7 @@ class Kpi
         $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} < red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value < yellow_threshold
-        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} < yellow_threshold (#{yellow_threshold})"
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} < yellow_threshold (#{yellow_threshold}). Red threshold is #{red_threshold}"
         @yellow_threshold_violations_count += 1
       end
     when /aggregate_report_error/
@@ -34,7 +51,7 @@ class Kpi
         $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value.to_f > yellow_threshold
-        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold})"
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold}). Red threshold is #{red_threshold}"
         @yellow_threshold_violations_count += 1
       end
     else
@@ -42,7 +59,7 @@ class Kpi
         $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > red_threshold (#{red_threshold})"
         @red_threshold_violations_count += 1
       elsif report_value > yellow_threshold
-        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold})"
+        $logger.info "#{scope_name} of #{sampler_label_name} = #{report_value} > yellow_threshold (#{yellow_threshold}).Red threshold is #{red_threshold}"
         @yellow_threshold_violations_count += 1
       end
     end
@@ -56,7 +73,7 @@ class Kpi
     if @predefined_kpi['sampler_label'].include?('.*')
       any_values_from_kpi = @predefined_kpi.select { |item| item[0] == '.*' }             # Find all '.*' values and add them to separate array
       any_values_from_kpi.delete_if { |row| row['scope_name'].nil? }                      # Delete empty elements from array
-      @predefined_kpi.delete_if { |row| any_values_from_kpi.include?(row) }               # Delete all '.*' from KPI's
+      @predefined_kpi.delete_if { |row| any_values_from_kpi.include?(row) }               # Delete all '.*' from KPI's hash, to exclude them from the next checks
     end
 
     @aggregated_data_hash['sampler_label'].each do |sampler_label_name|
@@ -93,11 +110,26 @@ class Kpi
         end
       end
     end
+    
+    checks_count = count_gathered_values(@aggregated_data_hash)
+    error_perc   = ((@red_threshold_violations_count.to_f/checks_count) * 100).round(2)
+    warning_perc = ((@yellow_threshold_violations_count.to_f/checks_count) * 100).round(2)
 
-    if @red_threshold_violations_count > 0
-      p 'Test has exceeded values'
+    if error_perc >= @test_settings['red_threshold']
+      $logger.error 'Test has exceeded values'
+      status = 'failed'
+    elsif @yellow_threshold_violations_count > 0
+      $logger.info 'Test passed with warnings'
+      status = 'warning'
     else
-      p 'Test succeeded'
+      $logger.info 'Test succeeded'
+      status = 'success'
     end
+
+    return {
+              "status" => status,
+              "yellow_threshold_perc" => warning_perc,
+              "red_threshold_perc" => error_perc
+           }
   end
 end

@@ -20,20 +20,22 @@ class Influx
     @current_build_number = ENV['current_build_number'].to_i
 
     influxdbUrl      = "#{@influx_protocol}://#{@influx_host}:#{@influx_port}/"
-    influxdbDatabase = "#{@influx_db}"
+    influxdbDatabase = @influx_db
     @influxdb = InfluxDB::Client.new influxdbDatabase,
-                url: influxdbUrl,
-                username: @influx_username,
-                password: @influx_password,
-                open_timeout: 320,
-                read_timeout: 320
-  end
+                  url: influxdbUrl,
+                  username: @influx_username,
+                  password: @influx_password,
+                  retry: 5,
+                  open_timeout: 320,
+                  read_timeout: 320
+  end  
   
-  def get_aggregated_data_to_csv(start_time,test_results_folder)
-    getBuildDurationTime(start_time) # get start, finish test time
-    getAggregatedData                # get aggregated data from InfluxDb
-    aggregatedDataToCsv(test_results_folder)              # Create CSV file and write aggregated data to it
-    sendAggregatedDataToDB           # Send aggregated data to 'aggregatedReport' measurements
+  def get_aggregated_data_to_csv(build_started,test_results_folder)
+    start_time = (build_started - 5).strftime("%Y-%m-%d %H:%M:%S") # decrease time because of InfluxDB time delays
+    getBuildDurationTime(start_time)
+    getAggregatedData
+    aggregatedDataToCsv(test_results_folder)
+    sendAggregatedDataToDB                                         # Send data to InfluxDB 'aggregatedReport' measurements
   end
 
   ##### Private methods #####
