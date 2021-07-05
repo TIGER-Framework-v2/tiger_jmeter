@@ -11,7 +11,7 @@ data_folder          = test_results_folder + "/data"
 logs_folder          = test_results_folder + "/log"
 
 jmeter_cmd_options   = ''
-jmeter_bin_path      = '/opt/apache-jmeter-5.1.1/bin/jmeter'
+jmeter_bin_path      = '/opt/apache-jmeter-5.4.1/bin/jmeter'
 tiger_influxdb_extension_path = '/opt/tiger/scripts/tiger_extensions/jmeter_tiger_extension.jmx'
 
 
@@ -67,7 +67,7 @@ build_started = Time.now
 jmeter_cmd_res = system(jmeter_cmd)
 build_finished = Time.now 
 
-# Getting aggregated data 
+# Getting aggregated data
 get_CSV = Influx.new()
 get_CSV.get_aggregated_data_to_csv(build_started,test_results_folder)
 
@@ -77,7 +77,16 @@ kpi_results = kpi.kpi_analyse
 
 # Generate JSON report
 json_report = Json_report.new(build_started, build_finished)
-json_report.generate_json_report(kpi_results, test_results_folder)
+full_report_hash = json_report.generate_json_report(kpi_results, test_results_folder)
+full_report_hash[:id] = ENV['running_test_id']
+
+http_req = Http_request.new()
+$logger.info "Container status update HTTP request result: "
+$logger.info http_req.send(ENV['rails_host'], ENV['rails_port'], "/runningtests/update", full_report_hash)
 
 $logger.info jmeter_cmd_res
 $logger.info "Results folder: #{test_results_folder}"
+
+if (ENV['keep_container_running']=='1')
+    sleep 60*60*24
+end

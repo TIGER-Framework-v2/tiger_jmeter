@@ -27,6 +27,7 @@ class Json_report
     File.open("#{result_folder}/test_report.json","w") do |f|
       f.write(report.to_json)
     end
+    return report
   end
 
   ##### Private methods #####
